@@ -25,3 +25,10 @@ Feature: Test importing Ordering questions
     And I press "id_submitbutton"
     And I press "Continue"
     Then I should see "dd-ordering 1"
+    And I choose "Edit question" action for "dd-ordering 1" in the question bank
+    Then the following fields match these values:
+      | shownumcorrect          | 1 |
+      | id_hintshownumcorrect_0 | 1 |
+      | id_hintoptions_0        | 0 |
+      | id_hintshownumcorrect_1 | 0 |
+      | id_hintoptions_1        | 1 |
