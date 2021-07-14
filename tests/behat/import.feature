@@ -32,3 +32,20 @@ Feature: Test importing Ordering questions
       | id_hintoptions_0        | 0 |
       | id_hintshownumcorrect_1 | 0 |
       | id_hintoptions_1        | 1 |
+
+  @javascript @_file_upload
+  Scenario: Import old question.
+    When I navigate to "Question bank > Import" in current page administration
+    And I set the field "id_format_xml" to "1"
+    And I upload "question/type/ordering/tests/fixtures/testoldquestion.moodle.xml" file to "Import" filemanager
+    And I press "id_submitbutton"
+    And I press "Continue"
+    Then I should see "dd-ordering old question"
+    And I choose "Edit question" action for "dd-ordering old question" in the question bank
+    Then the following fields match these values:
+      | shownumcorrect          | 1 |
+      | id_hintshownumcorrect_0 | 1 |
+      | id_hintoptions_0        | 1 |
+      | id_hintshownumcorrect_1 | 1 |
+      | id_hintoptions_1        | 1 |
+      

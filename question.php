@@ -889,9 +889,9 @@ class qtype_ordering_question extends question_graded_automatically {
      * @param int $answerid The answerid of the current response.
      * @param array $correctresponse The correct response list base on grading type.
      * @param array $currentresponse The current response list base on grading type.
-     * @return float The grade, base on the fraction scale.
+     * @return float|null Float if the grade, base on the fraction scale and null if the item is not in the correct response.
      */
-    protected function get_fraction_of_item(int $position, int $answerid, array $correctresponse, array $currentresponse): float {
+    protected function get_fraction_of_item(int $position, int $answerid, array $correctresponse, array $currentresponse) {
         $options = $this->get_ordering_options();
         $gradingtype = $options->gradingtype;
 

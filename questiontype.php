@@ -413,10 +413,9 @@ class qtype_ordering extends question_type {
             return false;
         }
 
-        // Initialize the shownumcorrect and highlight options with the old question.
+        // Initialize the shownumcorrect and highlight options with the old question when restoring.
         $hints = $DB->get_records('question_hints', ['questionid' => $question->id], 'id ASC');
         $counthints = count($hints);
-        $shownumcorrectcombinedfeedback = false;
         for ($i = 0; $i < max(self::DEFAULT_NUM_HINTS, $counthints); $i++) {
             $hint = array_shift($hints);
             if (!$hint) {
@@ -428,7 +427,6 @@ class qtype_ordering extends question_type {
                 $hint->options = 1;
                 $hint->shownumcorrect = 1;
                 $hint->id = $DB->insert_record('question_hints', $hint);
-                $shownumcorrectcombinedfeedback = true;
             }
 
             if (isset($hint->shownumcorrect) || isset($hint->options)) {
@@ -437,14 +435,7 @@ class qtype_ordering extends question_type {
 
             $hint->options = 1;
             $hint->shownumcorrect = 1;
-            $shownumcorrectcombinedfeedback = true;
             $DB->update_record('question_hints', $hint);
-        }
-
-        // In case import XML, we need to hack with old data for shownumcorrect of combined feedback.
-        if ($shownumcorrectcombinedfeedback) {
-            $question->options->shownumcorrect = 1;
-            $DB->set_field('qtype_ordering_options', 'shownumcorrect', 1, ['questionid'=> $question->id]);
         }
 
         parent::get_question_options($question);
@@ -776,6 +767,12 @@ class qtype_ordering extends question_type {
         $output .= "    <numberingstyle>$numberingstyle</numberingstyle>\n";
         $output .= $format->write_combined_feedback($question->options, $question->id, $question->contextid);
 
+        $shownumcorrect = $question->options->shownumcorrect;
+        if (!empty($question->options->shownumcorrect)) {
+            $output = str_replace("    <shownumcorrect/>\n", "", $output);
+        }
+        $output .= "    <shownumcorrect>$shownumcorrect</shownumcorrect>\n";
+
         foreach ($question->options->answers as $answer) {
             $output .= '    <answer fraction="'.$answer->fraction.'" '.$format->format($answer->answerformat).">\n";
             $output .= $format->writetext($answer->answer, 3);
@@ -852,11 +849,29 @@ class qtype_ordering extends question_type {
             $i++;
         }
 
-        $format->import_combined_feedback($newquestion, $data, true);
+        $format->import_combined_feedback($newquestion, $data, false);
+        $newquestion->shownumcorrect = $format->getpath($data, ['#', 'shownumcorrect', 0, '#'], null);
         // Check that the required feedback fields exist.
         $this->check_ordering_combined_feedback($newquestion);
 
         $format->import_hints($newquestion, $data, true, true);
+
+        if (!isset($newquestion->shownumcorrect)) {
+            $newquestion->shownumcorrect = 1;
+            $counthintshownumcorrect = self::DEFAULT_NUM_HINTS;
+            $counthintoptions = self::DEFAULT_NUM_HINTS;
+
+            if (isset($newquestion->hintshownumcorrect)) {
+                $counthintshownumcorrect = max(self::DEFAULT_NUM_HINTS, count($newquestion->hintshownumcorrect));
+            }
+
+            if (isset($newquestion->hintoptions)) {
+                $counthintoptions = max(self::DEFAULT_NUM_HINTS, count($newquestion->hintoptions));
+            }
+
+            $newquestion->hintshownumcorrect  = array_fill(0, $counthintshownumcorrect, 1);
+            $newquestion->hintoptions  = array_fill(0, $counthintoptions, 1);
+        }
 
         return $newquestion;
     }
